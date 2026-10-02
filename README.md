@@ -92,7 +92,7 @@ streamlit run product_launch_intelligence_agent.py
 The application uses a **coordinated team approach** where three specialized agents work together:
 
 - **Product Launch Analyst**: Evaluates competitive positioning, launch strategies, strengths, and weaknesses
-- **Market Sentiment Specialist**: Analyzes social media sentiment, customer feedback, and brand perception  
+- **Market Sentiment Specialist**: Analyzes social media sentiment, customer feedback, and brand perception
 - **Launch Metrics Specialist**: Tracks KPIs, adoption rates, press coverage, and performance indicators
 
 The team coordinates based on the analysis type requested, ensuring the most appropriate agent handles each task while maintaining consistency and comprehensive coverage across all analysis types.
