@@ -12,7 +12,7 @@ Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
 |-----|--------------|
 | **Competitor Analysis Agent** | Evidence-backed breakdown of a rival's latest launches – positioning, differentiators, pricing cues & channel mix |
 | **Market Sentiment Agent** | Consolidated social chatter & review themes split by  *positive* /  *negative* drivers |
-| **Launch Metrics Agent** | Publicly available KPIs – adoption numbers, press coverage, qualitative "buzz" signals |
+| **Launch Metrics Agent** | Publicly available KPIs – adoption numbers, press coverage, qualitative "buzz" signals | 
 
 ## Features
 
