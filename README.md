@@ -1,12 +1,12 @@
 # AI Product Launch Intelligence Agent
 
-###  FREE Step-by-Step Tutorial 
-**[Click here to follow our complete step-by-step tutorial](https://www.theunwindai.com/p/build-a-multi-agent-product-launch-intelligence-app) and learn how to build this from scratch with detailed code walkthroughs, explanations, and best practices.**
+An AI-powered product intelligence application designed to help Product Managers and Go-To-Market teams research competitors, understand market sentiment, and evaluate product launch signals from public web data.
 
-A **streamlined intelligence hub** for Go-To-Market (GTM) & Product-Marketing teams.  
-Built with **Streamlit + Agno (GPT-4o) + Firecrawl**, the app turns scattered public-web data into concise, actionable launch insights.
+The application uses a coordinated multi-agent architecture where specialized AI agents handle different aspects of product launch intelligence.
 
-## 3 Specialized Agents in Coordinated Team
+Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
+
+## Key Capabilities
 
 | Tab | What You Get |
 |-----|--------------|
@@ -14,25 +14,25 @@ Built with **Streamlit + Agno (GPT-4o) + Firecrawl**, the app turns scattered pu
 | **Market Sentiment Agent** | Consolidated social chatter & review themes split by 🚀 *positive* / ⚠️ *negative* drivers |
 | **Launch Metrics Agent** | Publicly available KPIs – adoption numbers, press coverage, qualitative "buzz" signals |
 
-Additional goodies:
+## Features
 
-*  **Sidebar key input** – enter OpenAI & Firecrawl keys securely (type="password")
-*  **Coordinated multi-agent team** – three expert agents work together for richer insight
-  *  Product Launch Analyst (GTM strategist)
-  *  Market Sentiment Specialist (consumer-perception guru)
-  *  Launch Metrics Specialist (performance analyst)
-*  **Quick actions** – press **J/K/L** to trigger the three analyses without touching the UI
-*  **Auto-formatted Markdown reports** – bullet summary first, then expanded deep-dive
-*  **Sources section** – every report ends with the URLs that were crawled or searched
+- **Multi-agent architecture** — three specialized agents collaborate on product launch research
+- **Competitor analysis** — analyzes competitive positioning, launches, pricing, and channels
+- **Market sentiment analysis** — identifies positive and negative customer perception signals
+- **Launch metrics analysis** — evaluates publicly available adoption and performance indicators
+- **Interactive Streamlit UI** — simple workflow for entering a company, product, or hashtag
+- **Structured reports** — generates concise findings followed by detailed analysis
+- **Web research** — uses Firecrawl to gather relevant public web information
 
 ##  Tech Stack
 
-| Layer | Details |
-|-------|---------|
-| Data | **Firecrawl** async search + crawl API |
-| Agents | **Agno Team** (GPT-4o) with FirecrawlTools |
-| UI | **Streamlit** wide-layout, tabbed workflow |
-| LLM | **OpenAI GPT-4o** |
+| Layer | Technology |
+|---|---|
+| **Frontend** | Streamlit |
+| **AI Agents** | Agno |
+| **LLM** | OpenAI |
+| **Web Research** | Firecrawl |
+| **Language** | Python |
 
 ##  Quick Start
 
