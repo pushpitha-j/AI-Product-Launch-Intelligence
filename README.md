@@ -1,7 +1,7 @@
-# 🚀 AI Product Launch Intelligence Agent
+# AI Product Launch Intelligence Agent
 
-### 🎓 FREE Step-by-Step Tutorial 
-**👉 [Click here to follow our complete step-by-step tutorial](https://www.theunwindai.com/p/build-a-multi-agent-product-launch-intelligence-app) and learn how to build this from scratch with detailed code walkthroughs, explanations, and best practices.**
+###  FREE Step-by-Step Tutorial 
+**[Click here to follow our complete step-by-step tutorial](https://www.theunwindai.com/p/build-a-multi-agent-product-launch-intelligence-app) and learn how to build this from scratch with detailed code walkthroughs, explanations, and best practices.**
 
 A **streamlined intelligence hub** for Go-To-Market (GTM) & Product-Marketing teams.  
 Built with **Streamlit + Agno (GPT-4o) + Firecrawl**, the app turns scattered public-web data into concise, actionable launch insights.
@@ -16,16 +16,16 @@ Built with **Streamlit + Agno (GPT-4o) + Firecrawl**, the app turns scattered pu
 
 Additional goodies:
 
-* 🔑 **Sidebar key input** – enter OpenAI & Firecrawl keys securely (type="password")
-* 🧠 **Coordinated multi-agent team** – three expert agents work together for richer insight
-  * 🔍 Product Launch Analyst (GTM strategist)
-  * 💬 Market Sentiment Specialist (consumer-perception guru)
-  * 📈 Launch Metrics Specialist (performance analyst)
-* ⚡ **Quick actions** – press **J/K/L** to trigger the three analyses without touching the UI
-* 📑 **Auto-formatted Markdown reports** – bullet summary first, then expanded deep-dive
-* 🛠️ **Sources section** – every report ends with the URLs that were crawled or searched
+*  **Sidebar key input** – enter OpenAI & Firecrawl keys securely (type="password")
+*  **Coordinated multi-agent team** – three expert agents work together for richer insight
+  *  Product Launch Analyst (GTM strategist)
+  *  Market Sentiment Specialist (consumer-perception guru)
+  *  Launch Metrics Specialist (performance analyst)
+*  **Quick actions** – press **J/K/L** to trigger the three analyses without touching the UI
+*  **Auto-formatted Markdown reports** – bullet summary first, then expanded deep-dive
+*  **Sources section** – every report ends with the URLs that were crawled or searched
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Details |
 |-------|---------|
@@ -34,7 +34,7 @@ Additional goodies:
 | UI | **Streamlit** wide-layout, tabbed workflow |
 | LLM | **OpenAI GPT-4o** |
 
-## 🚀 Quick Start
+##  Quick Start
 
 1. **Clone** the repository
 
@@ -66,7 +66,7 @@ streamlit run product_launch_intelligence_agent.py
 
 5. **Browse** to <http://localhost:8501> – you should see three analysis tabs.
 
-## 🕹️ Using the Application
+##  Using the Application
 
 1. Enter **API keys** in the sidebar (or ensure they are in your environment).
 2. Type a **company / product / hashtag** in the main input box.
@@ -75,7 +75,7 @@ streamlit run product_launch_intelligence_agent.py
    * Bullet list of key findings
    * Expanded, richly-formatted report (tables, call-outs, recommendations)
 
-## 🤖 How the Coordinated Team Works
+##  How the Coordinated Team Works
 
 The application uses a **coordinated team approach** where three specialized agents work together:
 
