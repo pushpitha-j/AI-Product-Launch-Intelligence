@@ -34,7 +34,7 @@ Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
 
 ![Company Analysis](assets/company-analysis.png)
 
-##  Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -44,7 +44,7 @@ Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
 | **Web Research** | Firecrawl |
 | **Language** | Python |
 
-##  Quick Start
+## Quick Start
 
 1. **Clone** the repository
 
@@ -76,7 +76,9 @@ streamlit run product_launch_intelligence_agent.py
 
 5. **Browse** to <http://localhost:8501> – you should see three analysis tabs.
 
-##  Using the Application
+> **Note:** Live AI analysis requires valid OpenAI and Firecrawl API access.
+
+## Using the Application
 
 1. Enter **API keys** in the sidebar (or ensure they are in your environment).
 2. Type a **company / product / hashtag** in the main input box.
@@ -85,7 +87,7 @@ streamlit run product_launch_intelligence_agent.py
    * Bullet list of key findings
    * Expanded, richly-formatted report (tables, call-outs, recommendations)
 
-##  How the Coordinated Team Works
+## How the Coordinated Team Works
 
 The application uses a **coordinated team approach** where three specialized agents work together:
 
