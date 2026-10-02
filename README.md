@@ -24,6 +24,16 @@ Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
 - **Structured reports** — generates concise findings followed by detailed analysis
 - **Web research** — uses Firecrawl to gather relevant public web information
 
+## Screenshots
+
+### Main Dashboard
+
+![AI Product Launch Intelligence Dashboard](assets/home.png)
+
+### Company Analysis
+
+![Company Analysis](assets/company-analysis.png)
+
 ##  Tech Stack
 
 | Layer | Technology |
@@ -39,8 +49,8 @@ Built with **Python, Streamlit, Agno, OpenAI, and Firecrawl**.
 1. **Clone** the repository
 
 ```bash
-git clone https://github.com/Shubhamsaboo/awesome-llm-apps.git
-cd advanced_ai_agents/multi_agent_apps/product_launch_intelligence_agent
+git clone https://github.com/pushpitha-j/AI-Product-Launch-Intelligence.git
+cd AI-Product-Launch-Intelligence
 ```
 
 2. **Install** dependencies
