@@ -1,12 +1,25 @@
-import streamlit as st
-from agno.agent import Agent
-from agno.run.agent import RunOutput
-from agno.team import Team
-from agno.models.openai import OpenAIChat
-from agno.tools.firecrawl import FirecrawlTools
-from dotenv import load_dotenv
-from textwrap import dedent
+"""
+AI Product Launch Intelligence Agent — Streamlit app.
+
+Run with:
+    streamlit run product_launch_intelligence_agent.py
+"""
+
 import os
+import re
+from datetime import datetime
+
+import streamlit as st
+from dotenv import load_dotenv
+
+from agents import (
+    PROVIDERS,
+    WORKFLOWS,
+    Config,
+    run_full_brief,
+    run_workflow,
+    export_markdown,
+)
 
 
 # ============================================================
@@ -14,1153 +27,357 @@ import os
 # ============================================================
 
 st.set_page_config(
-    page_title="AI Product Intelligence Agent",
+    page_title="AI Product Launch Intelligence Agent",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
-
-
-# ============================================================
-# ENVIRONMENT & API CONFIGURATION
-# ============================================================
 
 load_dotenv()
 
-st.sidebar.header("🔑 API Configuration")
 
-with st.sidebar.container():
-
-    openai_key = st.text_input(
-        "OpenAI API Key",
-        type="password",
-        value=os.getenv("OPENAI_API_KEY", ""),
-        help="Required for AI agent functionality"
-    )
-
-    firecrawl_key = st.text_input(
-        "Firecrawl API Key",
-        type="password",
-        value=os.getenv("FIRECRAWL_API_KEY", ""),
-        help="Required for web search and crawling"
-    )
-
-
-# Set environment variables
-if openai_key:
-    os.environ["OPENAI_API_KEY"] = openai_key
-
-if firecrawl_key:
-    os.environ["FIRECRAWL_API_KEY"] = firecrawl_key
-
-
-# ============================================================
-# MULTI-AGENT SYSTEM
-# ============================================================
-
-if openai_key and firecrawl_key:
-
-    # --------------------------------------------------------
-    # AGENT 1: PRODUCT LAUNCH ANALYST
-    # --------------------------------------------------------
-
-    launch_analyst = Agent(
-        name="Product Launch Analyst",
-
-        description=dedent("""
-            You are a senior Go-To-Market strategist who evaluates
-            competitor product launches with a critical,
-            evidence-driven lens.
-
-            Your objective is to uncover:
-
-            • How the product is positioned in the market
-            • Which launch tactics drove success
-            • Where execution fell short
-            • Actionable learnings competitors can leverage
-
-            Always cite observable signals such as:
-
-            • Messaging
-            • Pricing actions
-            • Channel mix
-            • Timing
-            • Engagement metrics
-            • Customer feedback
-
-            Maintain a crisp, executive tone and focus on strategic value.
-
-            IMPORTANT:
-            Conclude your report with a "Sources:" section,
-            listing all URLs of websites you crawled or searched
-            for this analysis.
-        """),
-
-        model=OpenAIChat(id="gpt-4o"),
-
-        tools=[
-            FirecrawlTools(
-                enable_search=True,
-                enable_crawl=True,
-                poll_interval=10
-            )
-        ],
-
-        debug_mode=True,
-        markdown=True,
-        exponential_backoff=True,
-        delay_between_retries=2,
-    )
-
-
-    # --------------------------------------------------------
-    # AGENT 2: MARKET SENTIMENT SPECIALIST
-    # --------------------------------------------------------
-
-    sentiment_analyst = Agent(
-        name="Market Sentiment Specialist",
-
-        description=dedent("""
-            You are a market research expert specializing in
-            sentiment analysis and consumer perception tracking.
-
-            Your expertise includes:
-
-            • Analyzing social media sentiment
-            • Analyzing customer feedback
-            • Identifying positive and negative sentiment drivers
-            • Tracking brand perception trends
-            • Monitoring customer satisfaction
-            • Identifying review patterns
-            • Providing actionable insights on market reception
-
-            Focus on extracting sentiment signals from:
-
-            • Social platforms
-            • Review sites
-            • Forums
-            • Customer feedback channels
-
-            IMPORTANT:
-            Conclude your report with a "Sources:" section,
-            listing all URLs of websites you crawled or searched
-            for this analysis.
-        """),
-
-        model=OpenAIChat(id="gpt-4o"),
-
-        tools=[
-            FirecrawlTools(
-                enable_search=True,
-                enable_crawl=True,
-                poll_interval=10
-            )
-        ],
-
-        debug_mode=True,
-        markdown=True,
-        exponential_backoff=True,
-        delay_between_retries=2,
-    )
-
-
-    # --------------------------------------------------------
-    # AGENT 3: LAUNCH METRICS SPECIALIST
-    # --------------------------------------------------------
-
-    metrics_analyst = Agent(
-        name="Launch Metrics Specialist",
-
-        description=dedent("""
-            You are a product launch performance analyst who
-            specializes in tracking and analyzing launch KPIs.
-
-            Your focus areas include:
-
-            • User adoption
-            • User engagement
-            • Revenue performance
-            • Market penetration
-            • Growth rates
-            • Press coverage
-            • Media attention
-            • Social media traction
-            • Viral coefficient
-            • Competitive market share
-
-            Always provide quantitative insights with context.
-
-            Benchmark against industry standards when possible.
-
-            IMPORTANT:
-            Conclude your report with a "Sources:" section,
-            listing all URLs of websites you crawled or searched
-            for this analysis.
-        """),
-
-        model=OpenAIChat(id="gpt-4o"),
-
-        tools=[
-            FirecrawlTools(
-                enable_search=True,
-                enable_crawl=True,
-                poll_interval=10
-            )
-        ],
-
-        debug_mode=True,
-        markdown=True,
-        exponential_backoff=True,
-        delay_between_retries=2,
-    )
-
-
-    # --------------------------------------------------------
-    # COORDINATED PRODUCT INTELLIGENCE TEAM
-    # --------------------------------------------------------
-
-    product_intelligence_team = Team(
-
-        name="Product Intelligence Team",
-
-        model=OpenAIChat(id="gpt-4o"),
-
-        members=[
-            launch_analyst,
-            sentiment_analyst,
-            metrics_analyst
-        ],
-
-        instructions=[
-
-            "Coordinate the analysis based on the user's request type.",
-
-            "1. For competitor analysis: "
-            "Use the Product Launch Analyst to evaluate "
-            "positioning, strengths, weaknesses, and strategic insights.",
-
-            "2. For market sentiment: "
-            "Use the Market Sentiment Specialist to analyze "
-            "social media sentiment, customer feedback, and brand perception.",
-
-            "3. For launch metrics: "
-            "Use the Launch Metrics Specialist to track "
-            "KPIs, adoption rates, press coverage, and performance indicators.",
-
-            "Always provide evidence-based insights with specific examples and data points.",
-
-            "Structure responses with clear sections and actionable recommendations.",
-
-            "Include a Sources section with all URLs crawled or searched."
-        ],
-
-        markdown=True,
-        debug_mode=True,
-        show_members_responses=True,
-    )
-
-else:
-
-    product_intelligence_team = None
-
-    st.warning(
-        "⚠️ Please enter both API keys in the sidebar "
-        "to use the application."
-    )
-
-
-# ============================================================
-# COMPETITOR REPORT GENERATOR
-# ============================================================
-
-def expand_competitor_report(
-    bullet_text: str,
-    competitor: str
-) -> str:
-
-    if not product_intelligence_team:
-
-        st.error(
-            "⚠️ Please enter both API keys in the sidebar first."
-        )
-
-        return ""
-
-    prompt = (
-
-        f"Transform the insight bullets below into a "
-        f"professional launch review for product managers "
-        f"analysing {competitor}.\n\n"
-
-        f"Produce well-structured **Markdown** with a mix "
-        f"of tables, call-outs and concise bullet points. "
-        f"Avoid long paragraphs.\n\n"
-
-        f"=== FORMAT SPECIFICATION ===\n"
-
-        f"# {competitor} – Launch Review\n\n"
-
-        f"## 1. Market & Product Positioning\n"
-
-        f"• Bullet point summary of how the product is positioned "
-        f"(max 6 bullets).\n\n"
-
-        f"## 2. Launch Strengths\n"
-
-        f"| Strength | Evidence / Rationale |\n"
-        f"|---|---|\n"
-        f"| … | … |\n"
-        f"(add 4-6 rows)\n\n"
-
-        f"## 3. Launch Weaknesses\n"
-
-        f"| Weakness | Evidence / Rationale |\n"
-        f"|---|---|\n"
-        f"| … | … |\n"
-        f"(add 4-6 rows)\n\n"
-
-        f"## 4. Strategic Takeaways for Competitors\n"
-
-        f"1. … (max 5 numbered recommendations)\n\n"
-
-        f"=== SOURCE BULLETS ===\n"
-        f"{bullet_text}\n\n"
-
-        f"Guidelines:\n"
-
-        f"• Populate the tables with specific points "
-        f"derived from the bullets.\n"
-
-        f"• Only include rows that contain meaningful data; "
-        f"omit blank entries."
-    )
-
-    resp: RunOutput = product_intelligence_team.run(prompt)
-
-    return (
-        resp.content
-        if hasattr(resp, "content")
-        else str(resp)
-    )
-
-
-# ============================================================
-# MARKET SENTIMENT REPORT GENERATOR
-# ============================================================
-
-def expand_sentiment_report(
-    bullet_text: str,
-    product: str
-) -> str:
-
-    if not product_intelligence_team:
-
-        st.error(
-            "⚠️ Please enter both API keys in the sidebar first."
-        )
-
-        return ""
-
-    prompt = (
-
-        f"Use the tagged bullets below to create a "
-        f"concise market-sentiment brief for **{product}**.\n\n"
-
-        f"### Positive Sentiment\n"
-
-        f"• List each positive point as a separate bullet "
-        f"(max 6).\n\n"
-
-        f"### Negative Sentiment\n"
-
-        f"• List each negative point as a separate bullet "
-        f"(max 6).\n\n"
-
-        f"### Overall Summary\n"
-
-        f"Provide a short paragraph (≤120 words) "
-        f"summarising the overall sentiment balance "
-        f"and key drivers.\n\n"
-
-        f"Tagged Bullets:\n"
-        f"{bullet_text}"
-    )
-
-    resp: RunOutput = product_intelligence_team.run(prompt)
-
-    return (
-        resp.content
-        if hasattr(resp, "content")
-        else str(resp)
-    )
-
-
-# ============================================================
-# LAUNCH METRICS REPORT GENERATOR
-# ============================================================
-
-def expand_metrics_report(
-    bullet_text: str,
-    launch: str
-) -> str:
-
-    if not product_intelligence_team:
-
-        st.error(
-            "⚠️ Please enter both API keys in the sidebar first."
-        )
-
-        return ""
-
-    prompt = (
-
-        f"Convert the KPI bullets below into a "
-        f"launch-performance snapshot for **{launch}** "
-        f"suitable for an executive dashboard.\n\n"
-
-        f"## Key Performance Indicators\n"
-
-        f"| Metric | Value / Detail | Source |\n"
-        f"|---|---|---|\n"
-        f"| … | … | … |\n"
-        f"(include one row per KPI)\n\n"
-
-        f"## Qualitative Signals\n"
-
-        f"• Bullet list of notable qualitative insights "
-        f"(max 5).\n\n"
-
-        f"## Summary & Implications\n"
-
-        f"Brief paragraph (≤120 words) highlighting "
-        f"what the metrics imply about launch success "
-        f"and next steps.\n\n"
-
-        f"KPI Bullets:\n"
-        f"{bullet_text}"
-    )
-
-    resp: RunOutput = product_intelligence_team.run(prompt)
-
-    return (
-        resp.content
-        if hasattr(resp, "content")
-        else str(resp)
-    )
-
-
-# ============================================================
-# MAIN UI
-# ============================================================
-
-st.title("🚀 AI Product Launch Intelligence Agent")
-
-st.markdown(
-    "*AI-powered insights for GTM, Product Marketing & Growth Teams*"
-)
-
-st.divider()
-
-
-# ============================================================
-# COMPANY INPUT
-# ============================================================
-
-st.subheader("🏢 Company Analysis")
-
-with st.container():
-
-    col1, col2 = st.columns([3, 1])
-
-    with col1:
-
-        company_name = st.text_input(
-            label="Company Name",
-
-            placeholder=(
-                "Enter company name "
-                "(e.g., OpenAI, Tesla, Spotify)"
-            ),
-
-            help=(
-                "This company will be analyzed by "
-                "the coordinated team of specialized agents"
-            ),
-
-            label_visibility="collapsed"
-        )
-
-    with col2:
-
-        if company_name:
-
-            st.success(
-                f"✓ Ready to analyze **{company_name}**"
-            )
-
-
-st.divider()
-
-
-# ============================================================
-# ANALYSIS TABS
-# ============================================================
-
-analysis_tabs = st.tabs(
-    [
-        "🔍 Competitor Analysis",
-        "💬 Market Sentiment",
-        "📈 Launch Metrics"
-    ]
-)
+def _secret(name: str, default: str = "") -> str:
+    """Read a value from Streamlit secrets (for cloud deploys), then the env."""
+    try:
+        value = st.secrets.get(name)  # raises if no secrets file exists
+        if value:
+            return str(value)
+    except Exception:
+        pass
+    return os.getenv(name, default)
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "report"
+
+
+TAB_META = {
+    "competitor": {
+        "icon": "🔍",
+        "button": "Analyze Competitor Positioning",
+        "about": """
+**Product Launch Analyst** – strategic GTM expert
+
+- Market & product positioning
+- Launch strengths and weaknesses, with evidence
+- Strategic takeaways for competing teams
+""",
+    },
+    "sentiment": {
+        "icon": "💬",
+        "button": "Analyze Customer Perception",
+        "about": """
+**Market Sentiment Specialist** – consumer perception expert
+
+- Positive and negative sentiment drivers
+- Sentiment by channel (reviews, Reddit, X, press)
+- Overall sentiment verdict
+""",
+    },
+    "metrics": {
+        "icon": "📈",
+        "button": "Analyze Launch Performance",
+        "about": """
+**Launch Metrics Specialist** – performance analytics expert
+
+- Publicly available adoption, engagement and traction KPIs
+- Press and social buzz signals
+- Launch performance scorecard
+""",
+    },
+}
 
 
 # ============================================================
 # SESSION STATE
 # ============================================================
 
-if "competitor_response" not in st.session_state:
-
-    st.session_state.competitor_response = None
-
-
-if "sentiment_response" not in st.session_state:
-
-    st.session_state.sentiment_response = None
-
-
-if "metrics_response" not in st.session_state:
-
-    st.session_state.metrics_response = None
+if "results" not in st.session_state:
+    st.session_state.results = {}
+if "subject_key" not in st.session_state:
+    st.session_state.subject_key = ""
 
 
 # ============================================================
-# COMPETITOR ANALYSIS TAB
+# SIDEBAR – CONFIGURATION
 # ============================================================
 
-with analysis_tabs[0]:
-
-    with st.container():
-
-        st.markdown(
-            "### 🔍 Competitor Launch Analysis"
-        )
-
-        with st.expander(
-            "ℹ️ About this Agent",
-            expanded=False
-        ):
-
-            st.markdown(
-                """
-                **Product Launch Analyst** - Strategic GTM Expert
-
-                Specializes in:
-
-                - Competitive positioning analysis
-                - Launch strategy evaluation
-                - Strengths & weaknesses identification
-                - Strategic recommendations
-                """
-            )
-
-
-        if company_name:
-
-            col1, col2 = st.columns([2, 1])
-
-            with col1:
-
-                analyze_btn = st.button(
-                    "🚀 Analyze Competitor Strategy",
-                    key="competitor_btn",
-                    type="primary",
-                    use_container_width=True
-                )
-
-
-            with col2:
-
-                if st.session_state.competitor_response:
-
-                    st.success(
-                        "✅ Analysis Complete"
-                    )
-
-                else:
-
-                    st.info(
-                        "⏳ Ready to analyze"
-                    )
-
-
-            if analyze_btn:
-
-                if not product_intelligence_team:
-
-                    st.error(
-                        "⚠️ Please enter both API keys "
-                        "in the sidebar first."
-                    )
-
-                else:
-
-                    with st.spinner(
-                        "🔍 Product Intelligence Team "
-                        "analyzing competitive strategy..."
-                    ):
-
-                        try:
-
-                            bullets: RunOutput = (
-                                product_intelligence_team.run(
-
-                                    f"Generate up to 16 "
-                                    f"evidence-based insight "
-                                    f"bullets about "
-                                    f"{company_name}'s most "
-                                    f"recent product launches.\n"
-
-                                    f"Format requirements:\n"
-
-                                    f"• Start every bullet with "
-                                    f"exactly one tag: "
-                                    f"Positioning | Strength | "
-                                    f"Weakness | Learning\n"
-
-                                    f"• Follow the tag with a "
-                                    f"concise statement "
-                                    f"(max 30 words) referencing "
-                                    f"concrete observations: "
-                                    f"messaging, differentiation, "
-                                    f"pricing, channel selection, "
-                                    f"timing, engagement metrics, "
-                                    f"or customer feedback."
-                                )
-                            )
-
-
-                            long_text = (
-                                expand_competitor_report(
-
-                                    bullets.content
-                                    if hasattr(
-                                        bullets,
-                                        "content"
-                                    )
-                                    else str(bullets),
-
-                                    company_name
-                                )
-                            )
-
-
-                            st.session_state.competitor_response = (
-                                long_text
-                            )
-
-                            st.success(
-                                "✅ Competitor analysis ready"
-                            )
-
-                            st.rerun()
-
-
-                        except Exception as e:
-
-                            st.error(
-                                f"❌ Error: {e}"
-                            )
-
-
-            # Display results
-
-            if st.session_state.competitor_response:
-
-                st.divider()
-
-                with st.container():
-
-                    st.markdown(
-                        "### 📊 Analysis Results"
-                    )
-
-                    st.markdown(
-                        st.session_state.competitor_response
-                    )
-
-
-        else:
-
-            st.info(
-                "👆 Please enter a company name above "
-                "to start the analysis"
-            )
-
-
-# ============================================================
-# MARKET SENTIMENT TAB
-# ============================================================
-
-with analysis_tabs[1]:
-
-    with st.container():
-
-        st.markdown(
-            "### 💬 Market Sentiment Analysis"
-        )
-
-
-        with st.expander(
-            "ℹ️ About this Agent",
-            expanded=False
-        ):
-
-            st.markdown(
-                """
-                **Market Sentiment Specialist**
-                - Consumer Perception Expert
-
-                Specializes in:
-
-                - Social media sentiment tracking
-                - Customer feedback analysis
-                - Brand perception monitoring
-                - Review pattern identification
-                """
-            )
-
-
-        if company_name:
-
-            col1, col2 = st.columns([2, 1])
-
-
-            with col1:
-
-                sentiment_btn = st.button(
-                    "📊 Analyze Market Sentiment",
-                    key="sentiment_btn",
-                    type="primary",
-                    use_container_width=True
-                )
-
-
-            with col2:
-
-                if st.session_state.sentiment_response:
-
-                    st.success(
-                        "✅ Analysis Complete"
-                    )
-
-                else:
-
-                    st.info(
-                        "⏳ Ready to analyze"
-                    )
-
-
-            if sentiment_btn:
-
-                if not product_intelligence_team:
-
-                    st.error(
-                        "⚠️ Please enter both API keys "
-                        "in the sidebar first."
-                    )
-
-                else:
-
-                    with st.spinner(
-                        "💬 Product Intelligence Team "
-                        "analyzing market sentiment..."
-                    ):
-
-                        try:
-
-                            bullets: RunOutput = (
-                                product_intelligence_team.run(
-
-                                    f"Summarize market sentiment "
-                                    f"for {company_name} in "
-                                    f"<=10 bullets. "
-
-                                    f"Cover top positive & "
-                                    f"negative themes with "
-                                    f"source mentions "
-                                    f"(G2, Reddit, Twitter, "
-                                    f"customer reviews)."
-                                )
-                            )
-
-
-                            long_text = (
-                                expand_sentiment_report(
-
-                                    bullets.content
-                                    if hasattr(
-                                        bullets,
-                                        "content"
-                                    )
-                                    else str(bullets),
-
-                                    company_name
-                                )
-                            )
-
-
-                            st.session_state.sentiment_response = (
-                                long_text
-                            )
-
-
-                            st.success(
-                                "✅ Sentiment analysis ready"
-                            )
-
-                            st.rerun()
-
-
-                        except Exception as e:
-
-                            st.error(
-                                f"❌ Error: {e}"
-                            )
-
-
-            # Display results
-
-            if st.session_state.sentiment_response:
-
-                st.divider()
-
-                with st.container():
-
-                    st.markdown(
-                        "### 📈 Analysis Results"
-                    )
-
-                    st.markdown(
-                        st.session_state.sentiment_response
-                    )
-
-
-        else:
-
-            st.info(
-                "👆 Please enter a company name above "
-                "to start the analysis"
-            )
-
-
-# ============================================================
-# LAUNCH METRICS TAB
-# ============================================================
-
-with analysis_tabs[2]:
-
-    with st.container():
-
-        st.markdown(
-            "### 📈 Launch Performance Metrics"
-        )
-
-
-        with st.expander(
-            "ℹ️ About this Agent",
-            expanded=False
-        ):
-
-            st.markdown(
-                """
-                **Launch Metrics Specialist**
-                - Performance Analytics Expert
-
-                Specializes in:
-
-                - User adoption metrics tracking
-                - Revenue performance analysis
-                - Market penetration evaluation
-                - Press coverage monitoring
-                """
-            )
-
-
-        if company_name:
-
-            col1, col2 = st.columns([2, 1])
-
-
-            with col1:
-
-                metrics_btn = st.button(
-                    "📊 Analyze Launch Metrics",
-                    key="metrics_btn",
-                    type="primary",
-                    use_container_width=True
-                )
-
-
-            with col2:
-
-                if st.session_state.metrics_response:
-
-                    st.success(
-                        "✅ Analysis Complete"
-                    )
-
-                else:
-
-                    st.info(
-                        "⏳ Ready to analyze"
-                    )
-
-
-            if metrics_btn:
-
-                if not product_intelligence_team:
-
-                    st.error(
-                        "⚠️ Please enter both API keys "
-                        "in the sidebar first."
-                    )
-
-                else:
-
-                    with st.spinner(
-                        "📈 Product Intelligence Team "
-                        "analyzing launch metrics..."
-                    ):
-
-                        try:
-
-                            bullets: RunOutput = (
-                                product_intelligence_team.run(
-
-                                    f"List (max 10 bullets) "
-                                    f"the most important "
-                                    f"publicly available "
-                                    f"KPIs & qualitative "
-                                    f"signals for "
-                                    f"{company_name}'s recent "
-                                    f"product launches. "
-
-                                    f"Include engagement stats, "
-                                    f"press coverage, adoption "
-                                    f"metrics, and market "
-                                    f"traction data if available."
-                                )
-                            )
-
-
-                            long_text = (
-                                expand_metrics_report(
-
-                                    bullets.content
-                                    if hasattr(
-                                        bullets,
-                                        "content"
-                                    )
-                                    else str(bullets),
-
-                                    company_name
-                                )
-                            )
-
-
-                            st.session_state.metrics_response = (
-                                long_text
-                            )
-
-
-                            st.success(
-                                "✅ Metrics analysis ready"
-                            )
-
-                            st.rerun()
-
-
-                        except Exception as e:
-
-                            st.error(
-                                f"❌ Error: {e}"
-                            )
-
-
-            # Display results
-
-            if st.session_state.metrics_response:
-
-                st.divider()
-
-                with st.container():
-
-                    st.markdown(
-                        "### 📊 Analysis Results"
-                    )
-
-                    st.markdown(
-                        st.session_state.metrics_response
-                    )
-
-
-        else:
-
-            st.info(
-                "👆 Please enter a company name above "
-                "to start the analysis"
-            )
-
-
-# ============================================================
-# SIDEBAR - SYSTEM STATUS
-# ============================================================
-
-with st.sidebar.container():
-
-    st.markdown(
-        "### 🤖 System Status"
+KEY_INFO = {
+    "openai": ("OpenAI API Key", "OPENAI_API_KEY", "OPENAI_MODEL", "Get one at platform.openai.com (needs credit)."),
+    "gemini": ("Google Gemini API Key", "GOOGLE_API_KEY", "GEMINI_MODEL", "Free key from aistudio.google.com."),
+}
+
+with st.sidebar:
+    st.header("🔑 API Configuration")
+
+    # Default to Gemini when only a Google key is configured.
+    env_provider = _secret("LLM_PROVIDER").lower()
+    if env_provider not in PROVIDERS:
+        env_provider = "gemini" if _secret("GOOGLE_API_KEY") and not _secret("OPENAI_API_KEY") else "openai"
+    provider_ids = list(PROVIDERS)
+    provider = st.radio(
+        "LLM provider",
+        provider_ids,
+        index=provider_ids.index(env_provider),
+        format_func=lambda p: PROVIDERS[p][0],
+    )
+    key_label, key_env, model_env, key_help = KEY_INFO[provider]
+
+    llm_key = st.text_input(
+        key_label,
+        type="password",
+        value=_secret(key_env),
+        help=f"Used by every agent. {key_help}",
+        key=f"key_{provider}",
+    )
+    firecrawl_key = st.text_input(
+        "Firecrawl API Key",
+        type="password",
+        value=_secret("FIRECRAWL_API_KEY"),
+        help="Used for web search and page scraping. Free plan at firecrawl.dev.",
     )
 
-    if openai_key and firecrawl_key:
-
-        st.success(
-            "✅ Product Intelligence Team ready"
-        )
-
+    model_options = list(PROVIDERS[provider][2]) + ["Custom…"]
+    env_model = _secret(model_env)
+    if env_model and env_model not in model_options:
+        model_options.insert(0, env_model)
+    model_choice = st.selectbox(
+        "Model",
+        model_options,
+        index=model_options.index(env_model) if env_model in model_options else 0,
+        help="Any chat model from this provider that supports tool calling.",
+        key=f"model_{provider}",
+    )
+    if model_choice == "Custom…":
+        model_id = st.text_input("Custom model ID", value="", key=f"custom_{provider}").strip()
     else:
+        model_id = model_choice
 
-        st.error(
-            "❌ API keys required"
+    with st.expander("Advanced"):
+        search_limit = st.slider("Search results per query", 3, 10, 5)
+        debug = st.checkbox(
+            "Print agent debug logs to the terminal",
+            value=False,
         )
 
-
-st.sidebar.divider()
+ready = bool(llm_key and firecrawl_key and model_id)
+cfg = Config(
+    llm_api_key=llm_key,
+    firecrawl_api_key=firecrawl_key,
+    provider=provider,
+    model_id=model_id or PROVIDERS[provider][1],
+    debug=debug,
+    search_limit=search_limit,
+)
 
 
 # ============================================================
-# SIDEBAR - COORDINATED TEAM
+# HEADER & INPUT
 # ============================================================
 
-with st.sidebar.container():
+st.title("🚀 AI Product Launch Intelligence Agent")
+st.markdown("*AI-powered launch research for GTM, Product Marketing & Growth teams*")
 
-    st.markdown(
-        "### 🎯 Coordinated Team"
+if not ready:
+    st.warning(
+        f"⚠️ Enter your {PROVIDERS[provider][0].split(' (')[0]} and Firecrawl API keys "
+        "in the sidebar to start."
     )
 
+col_company, col_focus = st.columns([3, 2])
+with col_company:
+    company_name = st.text_input(
+        "Company or product",
+        placeholder="e.g. OpenAI, Notion, Spotify",
+    ).strip()
+with col_focus:
+    launch_focus = st.text_input(
+        "Specific launch (optional)",
+        placeholder="e.g. Sora app, Notion Mail",
+        help="Narrow the research to one launch. Leave blank for the latest launches.",
+    ).strip()
 
-    agents_info = [
+# Results belong to one subject: clear them when the subject changes.
+subject_key = f"{company_name.lower()}|{launch_focus.lower()}"
+if subject_key != st.session_state.subject_key:
+    st.session_state.subject_key = subject_key
+    st.session_state.results = {}
 
-        (
-            "🔍",
-            "Product Launch Analyst",
-            "Strategic GTM expert"
-        ),
-
-        (
-            "💬",
-            "Market Sentiment Specialist",
-            "Consumer perception expert"
-        ),
-
-        (
-            "📈",
-            "Launch Metrics Specialist",
-            "Performance analytics expert"
-        )
-    ]
-
-
-    for icon, name, desc in agents_info:
-
-        with st.container():
-
-            st.markdown(
-                f"**{icon} {name}**"
-            )
-
-            st.caption(desc)
-
-
-st.sidebar.divider()
+st.divider()
 
 
 # ============================================================
-# SIDEBAR - ANALYSIS STATUS
+# RESULT RENDERING
 # ============================================================
 
-if company_name:
+def render_result(key: str) -> None:
+    result = st.session_state.results.get(key)
+    if not result:
+        return
 
-    with st.sidebar.container():
+    st.divider()
+    st.markdown(result.report)
 
-        st.markdown(
-            "### 📊 Analysis Status"
+    if result.findings:
+        with st.expander("🔎 Raw research findings from the agent"):
+            st.markdown(result.findings)
+
+    meta_col, dl_col = st.columns([3, 1])
+    with meta_col:
+        st.caption(
+            f"Generated in {result.seconds:.0f}s with `{result.model_id}` · "
+            f"{datetime.now():%d %b %Y}"
+        )
+    with dl_col:
+        st.download_button(
+            "⬇️ Download report (.md)",
+            data=result.report,
+            file_name=f"{_slug(result.subject)}-{key}.md",
+            mime="text/markdown",
+            key=f"dl_{key}",
+            width="stretch",
         )
 
-        st.markdown(
-            f"**Company:** {company_name}"
-        )
 
-
-        status_items = [
-
-            (
-                "🔍",
-                "Competitor Analysis",
-                st.session_state.competitor_response
-            ),
-
-            (
-                "💬",
-                "Sentiment Analysis",
-                st.session_state.sentiment_response
-            ),
-
-            (
-                "📈",
-                "Metrics Analysis",
-                st.session_state.metrics_response
-            )
-        ]
-
-
-        for icon, name, status in status_items:
-
-            if status:
-
-                st.success(
-                    f"{icon} {name} ✓"
-                )
-
-            else:
-
+def run_and_store(key: str, label: str, runner) -> None:
+    with st.status(f"{label} in progress…", expanded=True) as status:
+        try:
+            result = runner(lambda msg: status.write(msg))
+        except Exception as exc:  # noqa: BLE001 – show any failure to the user
+            status.update(label=f"{label} failed", state="error")
+            st.error(f"❌ {exc}")
+            msg = str(exc).lower()
+            if cfg.provider == "gemini" and ("503" in msg or "unavailable" in msg or "high demand" in msg):
                 st.info(
-                    f"{icon} {name} ⏳"
+                    "Google's free Gemini models are overloaded right now. Wait a few "
+                    "minutes and try again, or pick another model in the sidebar."
                 )
-
-
-    st.sidebar.divider()
+            elif cfg.provider == "gemini" and ("429" in msg or "resource_exhausted" in msg or "quota" in msg):
+                st.info(
+                    "Gemini's free tier allows only a few requests per minute. "
+                    "Wait a minute and try again, or run one tab at a time."
+                )
+            elif "insufficient_quota" in msg or "quota" in msg:
+                st.info(
+                    "Your OpenAI account has no credit. Add credit on platform.openai.com, "
+                    "or switch the sidebar to Google Gemini (free tier)."
+                )
+            else:
+                st.info(
+                    "Check that both API keys are valid, that your account has access "
+                    "to the selected model, and that you have Firecrawl credits."
+                )
+            return
+        st.session_state.results[key] = result
+        status.update(label=f"{label} complete", state="complete", expanded=False)
 
 
 # ============================================================
-# SIDEBAR - QUICK ACTIONS
+# ANALYSIS TABS
 # ============================================================
 
-with st.sidebar.container():
+tab_labels = [f"{TAB_META[k]['icon']} {WORKFLOWS[k].title}" for k in WORKFLOWS]
+tab_labels.append("🧠 Full Launch Brief")
+tabs = st.tabs(tab_labels)
 
-    st.markdown(
-        "### ⚡ Quick Actions"
-    )
+for tab, key in zip(tabs, WORKFLOWS):
+    wf = WORKFLOWS[key]
+    meta = TAB_META[key]
+    with tab:
+        st.markdown(f"### {meta['icon']} {wf.title}")
+        with st.expander("ℹ️ About this workflow"):
+            st.markdown(meta["about"])
+            st.markdown(
+                "**How it runs:** the specialist agent searches and scrapes the "
+                "public web with Firecrawl, then the Report Writer turns its "
+                "evidence into the structured report below."
+            )
+
+        if not company_name:
+            st.info("👆 Enter a company or product above to start.")
+            continue
+
+        clicked = st.button(
+            f"{meta['icon']} {meta['button']}",
+            key=f"btn_{key}",
+            type="primary",
+            disabled=not ready,
+            width="stretch",
+        )
+        if clicked:
+            run_and_store(
+                key,
+                wf.title,
+                lambda step, k=key: run_workflow(k, company_name, launch_focus, cfg, step),
+            )
+        render_result(key)
+
+
+with tabs[-1]:
+    st.markdown("### 🧠 Full Launch Brief")
+    with st.expander("ℹ️ About this workflow"):
+        st.markdown(
+            "The **Product Intelligence Team** leader delegates to all three "
+            "specialists, then synthesises their findings into one executive "
+            "brief with a launch scorecard. This makes more API calls than a "
+            "single tab, so it takes longer."
+        )
+
+    if not company_name:
+        st.info("👆 Enter a company or product above to start.")
+    else:
+        if st.button(
+            "🧠 Generate Full Launch Brief",
+            key="btn_brief",
+            type="primary",
+            disabled=not ready,
+            width="stretch",
+        ):
+            run_and_store(
+                "brief",
+                "Full launch brief",
+                lambda step: run_full_brief(company_name, launch_focus, cfg, step),
+            )
+        render_result("brief")
+
+
+# ============================================================
+# SIDEBAR – STATUS (rendered last so it reflects this run)
+# ============================================================
+
+with st.sidebar:
+    st.divider()
+    st.markdown("### 🤖 System Status")
+    if ready:
+        st.success(f"Product Intelligence Team ready · `{cfg.model_id}`")
+        if cfg.provider == "gemini":
+            st.caption("Free tier: run one workflow at a time to stay within rate limits.")
+    else:
+        st.error("API keys required")
+
+    st.markdown("### 🎯 Coordinated Team")
+    for key, wf in WORKFLOWS.items():
+        st.markdown(f"**{TAB_META[key]['icon']} {wf.agent_name}**")
+        st.caption(wf.agent_role)
+    st.markdown("**📝 Report Writer**")
+    st.caption("Turns research evidence into structured reports")
 
     if company_name:
+        st.divider()
+        st.markdown("### 📊 Analysis Status")
+        st.markdown(f"**Subject:** {company_name}" + (f" – {launch_focus}" if launch_focus else ""))
+        all_keys = list(WORKFLOWS) + ["brief"]
+        names = {**{k: WORKFLOWS[k].title for k in WORKFLOWS}, "brief": "Full Launch Brief"}
+        for key in all_keys:
+            done = key in st.session_state.results
+            st.markdown(f"{'✅' if done else '⏳'} {names[key]}")
 
-        st.markdown(
-            """
-            **J** - Competitor analysis
-
-            **K** - Market sentiment
-
-            **L** - Launch metrics
-            """
-        )
+        finished = [st.session_state.results[k] for k in all_keys if k in st.session_state.results]
+        if finished:
+            st.download_button(
+                "⬇️ Download all reports",
+                data=export_markdown(finished),
+                file_name=f"{_slug(company_name)}-launch-intelligence.md",
+                mime="text/markdown",
+                width="stretch",
+            )

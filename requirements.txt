@@ -1,4 +1,3 @@
-streamlit
-agno>=2.2.10
-firecrawl
-
+streamlit>=1.50
+agno[openai,google,firecrawl]>=3.2,<4
+python-dotenv>=1.0
